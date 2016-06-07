@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ 10.1 CONFIDENTIAL
+  ~ _________________
+  ~ 2014 10.1 Incorporated
+  ~ All Rights Reserved.
+  ~
+  ~ NOTICE:  All information contained herein is, and remains the property of 10.1 Incorporated and its suppliers, if
+  ~ any. The intellectual and technical concepts contained herein are proprietary to 10.1 Incorporated and its suppliers
+  ~ and may be covered by U.S. and Foreign Patents, patents in process, and are protected by trade secret or copyright
+  ~ law. Dissemination of this information or reproduction of this material is strictly forbidden unless prior written
+  ~ permission is obtained from 10.1 Incorporated.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:oauth="http://www.springframework.org/schema/security/oauth2" 
+	xmlns:sec="http://www.springframework.org/schema/security"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+	http://www.springframework.org/schema/security
+	http://www.springframework.org/schema/security/spring-security-3.2.xsd
+	http://www.springframework.org/schema/security/oauth2 
+	http://www.springframework.org/schema/security/spring-security-oauth2-2.0.xsd
+	http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context/spring-context-3.2.xsd
+	http://www.springframework.org/schema/util 
+	http://www.springframework.org/schema/util/spring-util.xsd">
+        
+
+    <context:component-scan base-package="com.tenone.api.services" annotation-config="true" scoped-proxy="interfaces"/>
+
+ 	<http  request-matcher="regex" 
+ 	    create-session="never" entry-point-ref="oauthAuthenticationEntryPoint"
+	    access-decision-manager-ref="accessDecisionManager" 
+	    use-expressions="false"     
+	    xmlns="http://www.springframework.org/schema/security">
+		<anonymous enabled="false" />
+		<custom-filter before="FILTER_SECURITY_INTERCEPTOR" ref="customFilterSecurityInterceptor" />
+		<custom-filter ref="resourceServerFilter" before="PRE_AUTH_FILTER" />
+		<access-denied-handler ref="oauth2AccessDeniedHandler" />
+		<expression-handler ref="oauthWebExpressionHandler" />
+	</http>
+    
+ 	<oauth:expression-handler     id="oauthExpressionHandler" />
+	<oauth:web-expression-handler id="oauthWebExpressionHandler" />
+ 	
+	<bean id="oauthAuthenticationEntryPoint" class="org.springframework.security.oauth2.provider.error.OAuth2AuthenticationEntryPoint">
+		<property name="realmName" value="instreamClientPortal" />
+	</bean>
+	
+	<bean id="accessDecisionManager" class="org.springframework.security.access.vote.UnanimousBased" xmlns="http://www.springframework.org/schema/beans">
+	  <constructor-arg>
+	    <list>
+	      <bean class="org.springframework.security.oauth2.provider.vote.ScopeVoter" />
+	      <bean class="org.springframework.security.access.vote.AuthenticatedVoter" />
+	      <bean class="org.springframework.security.web.access.expression.WebExpressionVoter"/>
+	    </list>
+	  </constructor-arg>
+    </bean>
+	
+	<bean id="affirmativeBasedAccessDecisionManager" class="org.springframework.security.access.vote.AffirmativeBased">
+        <constructor-arg>
+            <list>
+                <bean id="roleVoter" class="org.springframework.security.access.vote.RoleVoter"/>
+                <bean id="authenticatedVoter" class="org.springframework.security.access.vote.AuthenticatedVoter"/>
+            </list>
+        </constructor-arg>
+    </bean>
+	
+    <bean id="customFilterSecurityInterceptor" class="org.springframework.security.web.access.intercept.FilterSecurityInterceptor">
+        <property name="authenticationManager" ref="authenticationManager"/>
+        <property name="accessDecisionManager" ref="affirmativeBasedAccessDecisionManager"/>
+        <property name="securityMetadataSource" ref="customSecurityMetadataSource"/>
+    </bean>
+
+    <bean id="customSecurityMetadataSource" class="com.tenone.auth.CustomFilterInvocationSecurityMetadataSource">
+        <constructor-arg>
+            <util:map />
+        </constructor-arg>
+    </bean>
+	
+
+</beans>
+    
